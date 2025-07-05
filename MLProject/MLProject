@@ -1,0 +1,7 @@
+name: Air_Quality_Training_Pipeline
+
+conda_file: conda.yaml
+
+entry_points:
+  main:
+    command: "python modeling-tuning.py"

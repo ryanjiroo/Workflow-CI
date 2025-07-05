@@ -1,0 +1,67 @@
+name: MLflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  train-log-and-dockerize:
+    runs-on: ubuntu-latest
+    environment: Workflow-CI
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mlflow scikit-learn pandas joblib
+
+    - name: Train MLflow Model
+      run: |
+        mlflow run MLProject --env-manager=local
+
+    - name: Commit and Push MLflow Artifacts
+      run: |
+        git config user.name 'github-actions'
+        git config user.email 'github-actions@github.com'
+        git pull --rebase origin main
+        git add mlruns/*
+        git commit -m 'Update model artifact from MLflow tracking'
+        git push
+
+    - name: Upload MLflow Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mlflow-artifacts
+        path: mlruns/
+
+    - name: Get Latest MLflow Model Path
+      id: get_model_path
+      run: |
+        MODEL_PATH=$(find mlruns -type d -path "*/artifacts/model" | sort -r | head -n 1)
+        echo "MODEL_PATH=$MODEL_PATH"
+        echo "model_path=$MODEL_PATH" >> $GITHUB_OUTPUT
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.USERNAME_DOCKER }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build Docker Image from MLflow Model
+      run: |
+        echo "Building Docker with model at: ${{ steps.get_model_path.outputs.model_path }}"
+        mlflow models build-docker -m ${{ steps.get_model_path.outputs.model_path }} --name forecasting-udara
+
+    - name: Push Docker Image to Docker Hub
+      run: |
+        docker tag forecasting-udara:latest ${{ secrets.USERNAME_DOCKER }}/forecasting-udara:latest
+        docker push ${{ secrets.USERNAME_DOCKER }}/forecasting-udara:latest
