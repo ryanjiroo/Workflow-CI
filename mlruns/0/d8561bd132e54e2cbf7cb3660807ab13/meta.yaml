@@ -1,0 +1,14 @@
+artifact_uri: file:///home/runner/work/workflow-ci/workflow-ci/mlruns/0/d8561bd132e54e2cbf7cb3660807ab13/artifacts
+end_time: 1751731701063
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: d8561bd132e54e2cbf7cb3660807ab13
+run_name: big-shrimp-446
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1751731695775
+status: 3
+tags: []
+user_id: runner
